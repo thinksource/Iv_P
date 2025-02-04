@@ -390,3 +390,163 @@ c. 乐观并发控制
 总结
 
 MVCC 通过维护数据多版本和快照隔离，使读操作无需锁、写操作最小化锁范围，从而避免传统锁机制中的竞争问题。它是 PostgreSQL、MySQL InnoDB 等数据库实现高并发的核心机制。
+
+
+## 在 PostgreSQL 中，索引是优化查询性能的重要工具。以下是创建索引的详细方法和示例：
+一、基本语法
+sql
+Copy
+
+CREATE [UNIQUE] INDEX [CONCURRENTLY] [索引名] 
+ON [表名] 
+[USING 索引类型 (如 btree, hash, gin, gist)] 
+(列名 [操作符类], ...)
+[WHERE 过滤条件];  -- 部分索引
+
+二、常见索引类型及示例
+1. B-tree 索引（默认）
+
+    适用场景：等值查询、范围查询（=, >, <, BETWEEN）、排序。
+
+    示例：
+    sql
+    Copy
+
+    -- 为 users 表的 email 列创建唯一索引
+    CREATE UNIQUE INDEX idx_users_email ON users (email);
+
+    -- 为 orders 表的 order_date 列创建索引
+    CREATE INDEX idx_orders_date ON orders (order_date);
+
+2. 复合索引（多列索引）
+
+    适用场景：多列联合查询。
+    sql
+    Copy
+
+    -- 为 orders 表的 customer_id 和 order_date 创建复合索引
+    CREATE INDEX idx_orders_customer_date ON orders (customer_id, order_date);
+
+3. 哈希索引
+
+    适用场景：精确等值查询（不支持范围查询或排序）。
+    sql
+    Copy
+
+    CREATE INDEX idx_users_id_hash ON users USING hash (id);
+
+4. GIN 索引（通用倒排索引）
+
+    适用场景：JSONB、数组、全文搜索。
+    sql
+    Copy
+
+    -- 为 products 表的 tags 数组列创建 GIN 索引
+    CREATE INDEX idx_products_tags ON products USING gin (tags);
+
+    -- 为 articles 表的 content 列创建全文搜索索引
+    CREATE INDEX idx_articles_content ON articles USING gin (to_tsvector('english', content));
+
+5. GiST 索引（通用搜索树）
+
+    适用场景：几何数据、范围类型、全文搜索（替代 GIN）。
+    sql
+    Copy
+
+    -- 为 polygons 表的 geom 几何列创建 GiST 索引
+    CREATE INDEX idx_polygons_geom ON polygons USING gist (geom);
+
+6. BRIN 索引（块范围索引）
+
+    适用场景：大型有序数据集（如时间序列）。
+    sql
+    Copy
+
+    -- 为 sensor_data 表的 timestamp 列创建 BRIN 索引
+    CREATE INDEX idx_sensor_time ON sensor_data USING brin (timestamp);
+
+三、高级索引选项
+1. 并发创建索引（避免锁表）
+
+    适用场景：生产环境避免阻塞写入操作。
+    sql
+    Copy
+
+    CREATE INDEX CONCURRENTLY idx_orders_amount ON orders (amount);
+
+2. 表达式索引（基于函数或计算）
+
+    适用场景：对列进行转换后的查询（如大小写不敏感搜索）。
+    sql
+    Copy
+
+    -- 为 users 表的小写 name 创建索引
+    CREATE INDEX idx_users_lower_name ON users (LOWER(name));
+
+    -- 为 products 表的 (price * quantity) 计算结果创建索引
+    CREATE INDEX idx_products_total ON products ((price * quantity));
+
+3. 部分索引（过滤条件索引）
+
+    适用场景：仅为部分数据创建索引，减少索引大小。
+    sql
+    Copy
+
+    -- 仅索引 active 用户
+    CREATE INDEX idx_users_active ON users (email) WHERE is_active = true;
+
+    -- 仅索引高价值订单
+    CREATE INDEX idx_orders_high_value ON orders (customer_id) WHERE amount > 1000;
+
+四、索引管理
+1. 查看索引
+sql
+Copy
+
+-- 查看表的索引
+SELECT indexname, indexdef 
+FROM pg_indexes 
+WHERE tablename = 'orders';
+
+2. 删除索引
+sql
+Copy
+
+DROP INDEX [IF EXISTS] idx_users_email;
+
+3. 重建索引
+sql
+Copy
+
+-- 重建索引（清理碎片）
+REINDEX INDEX idx_users_email;
+
+五、最佳实践
+
+    避免过度索引：索引会降低写入速度，仅针对高频查询创建。
+
+    监控索引使用：
+    sql
+    Copy
+
+    -- 查看索引使用情况
+    SELECT * FROM pg_stat_user_indexes;
+
+    定期维护：使用 VACUUM ANALYZE 更新统计信息。
+
+    选择合适类型：根据查询模式选择 B-tree、GIN、GiST 等。
+
+示例总结
+sql
+Copy
+
+-- 创建并发复合索引
+CREATE INDEX CONCURRENTLY idx_orders_user_date 
+ON orders (user_id, order_date DESC);
+
+-- 创建部分表达式索引
+CREATE INDEX idx_products_name_search 
+ON products (LOWER(name)) 
+WHERE stock > 0;
+
+通过合理使用索引，可以显著提升 PostgreSQL 的查询性能！
