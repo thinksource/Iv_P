@@ -1,0 +1,51 @@
+1. Understanding the Role and Company
+
+    Research Milestone Group and their product pControl
+    Understand funds processing and how pControl is used in financial systems
+    Review the company’s values, culture, and recent projects
+
+2. Technical Skills Preparation
+
+    Programming & Development:
+        Strong Python coding skills (focus on real-world commercial use cases)
+        Understanding structured development techniques (e.g., modular programming, SOLID principles)
+        Experience in unit testing and test-driven development (TDD)
+    Databases & Querying:
+        Proficiency in SQL (preferably PostgreSQL)
+        Experience in data analysis & enrichment
+    System Design & Configuration:
+        Working with business system architecture
+        Configuring enterprise applications
+        Understanding workflows and automation
+    Deployment & Release Management:
+        Experience deploying development work into production environments
+        Understanding CI/CD pipelines, DevOps practices, and version control
+
+3. Business & Domain Knowledge
+
+    Financial Systems:
+        Basic knowledge of funds processing and investment management
+        Understanding risk management and operational processes in finance
+    Agile Development:
+        Familiarity with Scrum, Kanban, sprints, and iterative development
+
+4. Problem-Solving & Scenario-Based Questions
+
+    Expect technical problem-solving questions related to data analysis, debugging, and workflows
+    Be ready for case studies or system design scenarios
+    Example: "How would you debug a performance issue in a Python-based application?"
+
+5. Soft Skills & Behavioral Interview Prep
+
+    Be analytical, adaptable, and a team player
+    Communicate complex topics clearly and concisely
+    Prepare for STAR-based behavioral questions (Situation, Task, Action, Result)
+
+Key Technologies to Prepare
+
+✅ Python (including libraries for automation, data handling)
+✅ SQL & PostgreSQL (query optimization, data structures)
+✅ Agile Development Practices
+✅ Software Testing & Debugging (unit tests, logging, troubleshooting)
+✅ System Architecture & Configuration
+✅ CI/CD & Deployment Processes
