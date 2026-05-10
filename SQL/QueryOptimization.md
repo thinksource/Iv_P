@@ -93,3 +93,33 @@ SELECT *
 |OFFSET / FETCH |OFFSET X ROWS| Degrades linearly (Slower as page depth increases)|Small datasets, simple internal admin panels|
 |Keyset (Seek)| WHERE ID > X | Consistently Fast (O(log N) complexity)|Infinite scroll, mobile apps, high-concurrency public APIs|
 |Indexed (Deferred Join)|Covering Index + Join | Lowest I/O overhead | Large tables where many columns (LOBs) must be returned |
+
+
+# Aggregation Optimization
+在 SQL Server 中，GROUP BY, ORDER BY, DISTINCT三个操作被称为阻断性算子（Blocking Operators）
+## 1. 为什么触发 Sort (排序)？
+- ORDER BY：逻辑最直接。数据库必须对结果集进行全量排序，除非数据已经通过索引预先排好了序。
+- GROUP BY：为了把相同的项聚在一起（例如统计每个城市的订单），SQL Server 通常有两种做法：
+- 1. Stream Aggregate：要求输入数据必须是有序的。如果没索引，它会先执行一个 Sort 动作。
+- 2. Hash Aggregate：如果数据量大且无序，它会构建哈希表。虽然不直接显示为“Sort”，但逻辑上同样需要处理全量数据。
+- DISTINCT：去重的本质就是排序或哈希。数据库必须对比每一行，确定它是否出现过。最简单的办法就是先把数据排好序，然后跳过重复的相邻项。
+
+## 2. 为什么触发 Memory Pressure (内存压力)？
+- 工作内存 (Workspace Memory)：执行排序或构建哈希表需要申请 Memory Grant（内存授权）。
+- 资源争抢：如果你的结果集很大（例如 100 万行），SQL Server 会尝试在内存中开辟一块空间来存放这些中间数据。
+- 并发瓶颈：当多个查询同时请求大额内存时，会导致 RESOURCE_SEMAPHORE 等待，系统整体性能下降。
+
+## 3. 为什么触发 TempDB (溢出)？
+
+这是开发者最不希望看到的阶段，称为 Spill to TempDB
+
+- 估算失误：如果 SQL Server 认为只有 100 行，但实际有 100 万行，它申请的内存就会不够用。
+- 物理落盘：当内存空间不足以支撑当前的排序或哈希操作时，SQL Server 必须将中间结果写入 TempDB（磁盘）。
+- 性能暴降：磁盘 I/O 的速度比内存慢数千倍。一旦发生 Spill，原本几毫秒的查询可能变成几秒甚至几分钟。
+
+| 特性| OPTION (RECOMPILE) | OPTIMIZE FOR UNKNOWN |
+|:---| :---|:---|
+|精准度| 最高（针对当前值优化）|中等（针对平均值优化）|
+| CPU 开销高 |（每次都要重新编译）| 极低（编译一次，长期缓存）| |缓存|不缓存计划 | 缓存平均计划 |
+|稳定性|极佳|极佳（消除极端的“慢查询”）|
+|适用场景| 复杂、运行频率低的报表 | 运行频率高、数据分布极度不均的 API |
